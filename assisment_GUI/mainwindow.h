@@ -43,6 +43,10 @@ private slots:
     void on_pushButton_8_clicked();
 
 
+    void on_pushButton_10_clicked();
+
+    void on_pushButton_9_clicked();
+
 private:
     Ui::MainWindow *ui;
     static const quint16 zumo_vender_id = 1027;

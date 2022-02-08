@@ -1,3 +1,5 @@
+#include <L3G.h>
+
 
 /*
 ******** LIBRARIES ********
@@ -7,16 +9,19 @@
 #include <QTRSensors.h>
 #include <Zumo32U4Buzzer.h>
 #include <Wire.h>
+#include "TurnSensor.h"
 
 Zumo32U4Motors motors;
 Zumo32U4Buzzer buzzer;
 Zumo32U4LineSensors sensors;
-
+Zumo32U4LCD lcd;
+L3G gyro;
+Zumo32U4ButtonA buttonA; //required by TurnSensor.h  
 /*
 ******** VARIABLES ********
 */
 const uint16_t moveDuration = 155;
-int motorspeed = 175;
+int motorspeed = 100;
 bool start = false; 
 char input, lastInput;
 int calibratedValue[3];                 // the calibrated QTR_THRESHOLD of the black line
@@ -40,6 +45,9 @@ void setup() {
     input = (char) Serial1.read();
   }
   calibrateZumo();
+  turnSensorSetup();
+  delay(500);
+  turnSensorReset();
   for (int i = 0; i < NUM_SENSORS; i++)
   {
     calibratedValue[i] = sensors.calibratedMaximumOn[i];
@@ -92,7 +100,7 @@ void manualMove(int speedl, int speedr){
 
 void zumoMove(){
   char zumoDirection = ' ';
-  while (zumoDirection != 'c'){
+  while (zumoDirection != 'c' || zumoDirection != 't' || zumoDirection != 'm'){
     zumoDirection = (char) Serial1.read();
     //forward
     if (zumoDirection == 'w'){
@@ -107,15 +115,23 @@ void zumoMove(){
     else if(zumoDirection == 'r'){
       manualMove(motorspeed, -motorspeed);
     }
+    //90 degree righ turn
+    else if(zumoDirection == 't'){
+      turnRight(90);
+    }
+    //90 degree left turn
+    else if(zumoDirection == 'm'){
+      turnLeft(90);
+    }
   }
-  lastInput = 'c';    //request that a 'complete' command needs to be done
+  lastInput = 'c';    //request that a 'complete' command needs to be done OR reactivate auto movement
 }
 
 void inputGUI(){
   while (Serial1.available() > 0 && lastInput != 'c'){
     start = true;  // start the zumo border detection as we have input
     input = (char) Serial1.read();
-        //used to stop zumo
+    //stop zumo
     if (input == 'x')
     {
       motors.setSpeeds(0, 0);
@@ -138,6 +154,31 @@ void inputGUI(){
   }
 }
 
+// Turn left
+void turnLeft(int degrees) {
+  turnSensorReset();
+  motors.setSpeeds(-motorspeed, motorspeed);
+  int angle = 0;
+  do {
+    delay(1);
+    turnSensorUpdate();
+    angle = (((int32_t)turnAngle >> 16) * 360) >> 16;
+  } while (angle < degrees);
+  motors.setSpeeds(0, 0);
+}
+
+// Turn right
+void turnRight(int degrees) {
+  turnSensorReset();
+  motors.setSpeeds(motorspeed, -motorspeed);
+  int angle = 0;
+  do {
+    delay(1);
+    turnSensorUpdate();
+    angle = (((int32_t)turnAngle >> 16) * 360) >> 16;
+  } while (angle > -degrees);
+  motors.setSpeeds(0, 0);
+}
 //used to detect wall/corner and set behaviour
 void detectWall()
 {

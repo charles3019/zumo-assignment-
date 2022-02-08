@@ -181,3 +181,15 @@ void MainWindow::on_pushButton_8_clicked()
 
 }
 
+
+void MainWindow::on_pushButton_10_clicked()
+{
+    sendSignal("m");
+}
+
+
+void MainWindow::on_pushButton_9_clicked()
+{
+    sendSignal("t");
+}
+
