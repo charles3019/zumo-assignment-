@@ -193,3 +193,9 @@ void MainWindow::on_pushButton_9_clicked()
     sendSignal("t");
 }
 
+
+void MainWindow::on_pushButton_11_clicked()
+{
+    sendSignal("z");
+}
+
