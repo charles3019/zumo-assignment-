@@ -1,17 +1,19 @@
+#include <L3G.h>
+
+
 /*
 ******** LIBRARIES ********
 */
+
 #include <Zumo32U4.h>
 #include <QTRSensors.h>
 #include <Zumo32U4Buzzer.h>
 #include <Wire.h>
 #include "TurnSensor.h"
-#include <L3G.h>
 
 Zumo32U4Motors motors;
 Zumo32U4Buzzer buzzer;
 Zumo32U4LineSensors sensors;
-Zumo32U4ProximitySensors proxSensors;
 Zumo32U4LCD lcd;
 L3G gyro;
 Zumo32U4ButtonA buttonA; //required by TurnSensor.h  
@@ -23,13 +25,7 @@ int motorspeed = 100;
 bool start = false; 
 char input, lastInput;
 int calibratedValue[3];                 // the calibrated QTR_THRESHOLD of the black line
-bool objectFound = false; 
-int corridorCounter = 1;                // used to count the number of corridors
-int previousCorridor = 0;               // used to store previous corridor when entering side corridors
-String rooms[50];                       // used to store the direction of each room
-String message;                         // used to store a specific message to send over to GUI
-bool roomScan = false;                  // used to store the state of scanning a room
-int roomCounter = 0;
+
 // Define an array for holding sensor values.
 //https://github.com/pololu/zumo-shield/blob/master/ZumoReflectanceSensorArray/examples/SensorCalibration/SensorCalibration.ino
 #define NUM_SENSORS 3
@@ -43,7 +39,6 @@ void setup() {
   delay(1000);
   buzzer.play(">g32>>c32");
   sensors.initThreeSensors();
-  proxSensors.initThreeSensors();
   char input = (char) Serial.read();  // waiting for GUI to send calibrate command, 'g'
   while (input != 'g')
   {
@@ -105,12 +100,10 @@ void manualMove(int speedl, int speedr){
 
 void zumoMove(){
   char zumoDirection = ' ';
-  Serial1.print("zumoMove");
-  while (zumoDirection != 'c' || zumoDirection != 't' || zumoDirection != 'm' ){
-
+  Serial1.print("You have control!");
+  while (!(zumoDirection == 'c' || zumoDirection == 't' || zumoDirection == 'm')){
     zumoDirection = (char) Serial1.read();
     //forward
-    //Serial1.print("loop");
     if (zumoDirection == 'w'){
       manualMove(motorspeed, motorspeed);
     }
@@ -149,48 +142,6 @@ void inputGUI(){
     else if (input == 'p')
     {
       motors.setSpeeds(motorspeed, motorspeed);
-    }
-    else if (input == 'z')
-    {
-      motors.setSpeeds(0, 0);
-      Serial1.print("Please show me the direction of the room!");
-      do{
-        input = (char) Serial1.read();
-      }while (!(input == 'l' || input == 'r'));
-      //check the direction of the room
-      // while (!(input == 'l' || input == 'r'))
-      // {
-      //   input = (char) Serial1.read();
-      // }
-      //if the direction of the room is left
-      if (input == 'l')
-      {
-        rooms[roomCounter] = "left";                //save the direction into that room
-        turnLeft(90);
-        // motors.setSpeeds(-TURN_SPEED, TURN_SPEED);  //manually adjust depending on input
-        // delay(TURN_DURATION);
-        // motors.setSpeeds(0, 0);
-      }
-      //if the direction of the room is right
-      else
-      {
-        rooms[roomCounter] = "right";               //save the direction into that room
-        turnRight(90);
-        // motors.setSpeeds(TURN_SPEED, -TURN_SPEED);  //manually adjust depending on input
-        // delay(TURN_DURATION);
-        // motors.setSpeeds(0, 0);
-      }
-      message = "Room: ";
-      //send the room details to GUI
-      Serial1.print(message + (roomCounter + 1));    
-      message = " on the " + rooms[roomCounter] + " side of corridor ";
-      Serial1.print(message + corridorCounter);
-      // Serial1.print(STRING_TERMINATOR);
-      delay(10);
-      roomScan = true;    //used to show that the room needs to be scanned
-      roomCounter++;      //increment the room number
-      scanRoom();
-      // moveZumo();         // move the zumo manually
     }
 
   }
@@ -277,60 +228,4 @@ bool checkCorner()
     }
     return false;
   }
-}
-
-void scanRoom()
-{
-  objectFound = false;
-  motors.setSpeeds(100, 100);
-  delay(170);
-  proxSensors.read();
-  //turn right
-  for (int i = 0; i < 24 && objectFound == false; i++)
-  {
-    motors.setSpeeds(motorspeed, -motorspeed);
-    delay(40);
-    motors.setSpeeds(0, 0);
-    //scan for object
-    if (proxSensors.countsLeftWithLeftLeds() > 0 || proxSensors.countsFrontWithLeftLeds() > 0 ||
-        proxSensors.countsFrontWithRightLeds() > 0 || proxSensors.countsRightWithRightLeds()>0)
-    {
-      //send message to GUI
-      personFoundMessage();
-      break;
-    }
-  }
-  //turn left similar to 180 degrees
-  for (int i = 0; i < 48 && objectFound == false; i++)
-  {
-    motors.setSpeeds(-motorspeed, +motorspeed);
-    delay(40);
-    motors.setSpeeds(0, 0);
-    if (proxSensors.countsLeftWithLeftLeds() > 0 || proxSensors.countsFrontWithLeftLeds() > 0 ||
-        proxSensors.countsFrontWithRightLeds() > 0 || proxSensors.countsRightWithRightLeds()>0)
-    {
-      personFoundMessage();
-      break;
-    }
-  }
-  if (objectFound == false)
-  {
-    Serial1.print("No object detected!");
-    delay(10);
-  }
-  Serial1.print("Please drive me outside the room!");
-  delay(10);
-  zumoMove(); // move the zumo manually
-}
-//used to reset global variables and communicate with GUI
-void personFoundMessage()
-{
-  delay(5);
-  objectFound = true;
-  roomScan = false;
-  message = "Found a person at room ";
-  Serial1.print(message + roomCounter);
-  // Serial1.print(STRING_TERMINATOR);
-  delay(10);
-  buzzer.play("! V10 cdefgab>cbagfedc");
 }
