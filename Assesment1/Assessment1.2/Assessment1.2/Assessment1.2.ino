@@ -21,7 +21,7 @@ Zumo32U4ButtonA buttonA; //required by TurnSensor.h
 ******** VARIABLES ********
 */
 const uint16_t moveDuration = 155;
-int motorspeed = 100;
+int motorspeed = 80;
 bool start = false; 
 char input, lastInput;
 int calibratedValue[3];                 // the calibrated QTR_THRESHOLD of the black line
