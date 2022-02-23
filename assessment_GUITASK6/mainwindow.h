@@ -59,7 +59,5 @@ private:
     static const quint16 zumo_product_id = 24577;
     QString zumo_port_name;
     bool zumo_port_available;
-//    QByteArray serialData;
-//    QString serialBuffer;
 };
 #endif // MAINWINDOW_H

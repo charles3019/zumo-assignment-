@@ -118,13 +118,11 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::readSerial(){
-    QByteArray serialData = myPort->readAll();
-    QString message = QString::fromStdString(serialData.toStdString());
-    ui->textEdit->append(message);
-//ui->textEdit->setPlainText("Hello world");
-//ui->textEdit->append("Dash");
-   //ui->textEdit->setReadOnly()
-
+    QByteArray serialData = myPort->readLine();
+    if (serialData.length() != -1){
+        QString message = QString::fromStdString(serialData.toStdString());
+        ui->textEdit->append(message);
+    }
 }
 void MainWindow::on_pushButton_clicked()
 {

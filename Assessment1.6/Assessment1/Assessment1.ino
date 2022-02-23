@@ -166,8 +166,8 @@ void inputGUI(){
       Serial1.print("Please show me the direction of the room!\n");
       do{
         input = (char) Serial1.read();
-      }while (!(input == 'l' || input == 'r'));
-      if (input == 'l'){
+      }while (!(input == 'l' || input == 'r' || input == 't' || input == 'm'));
+      if (input == 'l' || input == 'm'){
         rooms[roomCounter] = "left";                //save the direction into that room
         turnLeft(90);
       }
@@ -178,9 +178,9 @@ void inputGUI(){
       }
       message = "Room: ";
       //send the room details to GUI
-      Serial1.print(message + (roomCounter + 1));    
+      Serial1.print(message + (roomCounter + 1) + "\n");    
       message = " on the " + rooms[roomCounter] + " side of corridor ";
-      Serial1.println(message + corridorCounter);
+      Serial1.println(message + corridorCounter +"\n");
       // Serial1.print(STRING_TERMINATOR);
       delay(10);
       roomScan = true;    //used to show that the room needs to be scanned
@@ -188,10 +188,11 @@ void inputGUI(){
       scanRoom();
 
       turnRight(180); // turn 180 degrees so that the zumo is facing door of the room.
-      motors.setSpeeds(110, 110); // move forward so that zumo is inside Corridor
-      delay(185);
+      delay(90);
+      motors.setSpeeds(130, 130);// move forward so that zumo is inside Corridor
+      delay(275);
       //Turn left or right based on the previous input.
-      if (input == 'l'){
+      if (input == 'l' || input == 'm'){
         turnLeft(90);
       }
       else{
@@ -201,6 +202,8 @@ void inputGUI(){
         pauseTime = pauseTime + (millis() - beginPauseTime);
       }
       // zumoMove();         // move the zumo manually
+      delay(130);
+      lastInput = 'c';
     }
 
   }
@@ -285,11 +288,11 @@ bool checkCorner()
       if (isSideCorridor){
         isSideCorridor = false;
         Serial1.print("Exisiting side corridor number ");
-        Serial1.println(corridorCounter);
+        Serial1.println(corridorCounter + "\n");
         // Serial1.print(STRING_TERMINATOR);
         delay(10);
         message = "Zumo is at corridor number ";
-        Serial1.println(message + previousCorridor);
+        Serial1.println(message + previousCorridor +"\n");
         // Serial1.print(STRING_TERMINATOR);
         delay(10);
         previousCorridor = 0;   //reset the previous corridor
@@ -299,7 +302,7 @@ bool checkCorner()
         isSideCorridor = true;
         isAtEnd = false;
         Serial1.print("End of side-corridor number ");
-        Serial1.println(corridorCounter);
+        Serial1.println(corridorCounter +"\n");
         // Serial1.print(STRING_TERMINATOR);
         delay(10);
       }
@@ -307,9 +310,8 @@ bool checkCorner()
       {
         Serial1.print("Corner or T junction ahead. Manual mode activated!\n");    //Display a message showing a corner has been found
         delay(10);
-        corridorCounter++;
         message = "Zumo is at corridor number ";
-        Serial1.println(message + corridorCounter);
+        Serial1.println(message + corridorCounter + "\n");
         // Serial.print(STRING_TERMINATOR);
         delay(10);
       }
@@ -327,12 +329,21 @@ bool checkCorner()
 
       }
       else if(cTJunction == 'o' ){
-        runTime = millis() - (startTime + pauseTime);
-        turnRight(180);
-        lastInput = 'c';
-        motors.setSpeeds(motorspeed, motorspeed);
-        Serial1.print("Return Journey till the T Junction!\n");
-        delay(runTime);
+        if (corridorCounter == 1){
+          zumoMove();
+        }
+        else{
+          runTime = millis() - (startTime + pauseTime);
+          turnRight(180);
+          motors.setSpeeds(0,0);
+          delay(180);
+          motors.setSpeeds(motorspeed, motorspeed);
+          Serial1.print("Return Journey till the T Junction!\n");
+          Serial1.print(runTime);
+          Serial1.print("!\n");
+          delay(runTime);
+          zumoMove();
+        }
       }
       return true;
     }
@@ -343,8 +354,8 @@ bool checkCorner()
 void scanRoom()
 {
   objectFound = false;
-  motors.setSpeeds(100, 100);
-  delay(170);
+  motors.setSpeeds(130, 130);
+  delay(250);
   proxSensors.read();
   //turn right
   for (int i = 0; i < 24 && objectFound == false; i++)

@@ -12,46 +12,6 @@ void MainWindow::sendSignal(QString instruction){
     else{
         qDebug() << "Could not write to serial";
     }
-//    myPort->setPortName("COM19");
-
-//    if(myPort->open(QIODevice::ReadWrite)){
-////        Now the serial port is open try to set configuration
-////        myPort->setBaudRate(QSerialPort::Baud9600);
-
-//        if(!myPort->setBaudRate(QSerialPort::Baud9600))
-//            qDebug()<<myPort->errorString();
-
-//        if(!myPort->setDataBits(QSerialPort::Data8))
-//            qDebug()<<myPort->errorString();
-
-//        if(!myPort->setParity(QSerialPort::NoParity))
-//            qDebug()<<myPort->errorString();
-
-//        if(!myPort->setStopBits(QSerialPort::OneStop))
-//            qDebug()<<myPort->errorString();
-
-//        if(!myPort->setFlowControl(QSerialPort::NoFlowControl))
-//            qDebug()<<myPort->errorString();
-
-//        //If any error was returned the serial il corrctly configured
-
-//        myPort->write(instruction.toStdString().c_str());
-//        //the serial must remain opened
-
-//        /*
-//We will need this code when recieving message from zumo
-//*/
-//        if(myPort->waitForReadyRead(100)){
-//            //Data was returned
-//            qDebug()<<"Response: "<<myPort->readAll();
-//        }else{
-//            //No data
-//            qDebug()<<"Time out";
-//        }
-
-//    }else{
-//        qDebug()<<"Serial COM19 not opened. Error: "<<myPort->errorString();
-//    }
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -60,8 +20,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     myPort = new QSerialPort;
-//    serialBuffer = "";
-
     qDebug() << "Number of Ports: " << QSerialPortInfo::availablePorts().length();
     foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
         qDebug() << "Has Vender ID: " << serialPortInfo.hasVendorIdentifier();
@@ -118,19 +76,16 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::readSerial(){
-    QByteArray serialData = myPort->readAll();
-    QString message = QString::fromStdString(serialData.toStdString());
-    ui->textEdit->append(message);
-//ui->textEdit->setPlainText("Hello world");
-//ui->textEdit->append("Dash");
-   //ui->textEdit->setReadOnly()
-
+    QByteArray serialData = myPort->readLine();
+    if (serialData.length() != -1){
+        QString message = QString::fromStdString(serialData.toStdString());
+        ui->textEdit->append(message);
+    }
 }
+
 void MainWindow::on_pushButton_clicked()
 {
     //Move forward
-//    Not sure if "QSerialPort.write();" works
-//    myPort.write("w");
     sendSignal("w");
 }
 
@@ -138,7 +93,6 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_pushButton_2_clicked()
 {
 
-//    myPort.write("x");
     sendSignal("a");
 }
 
